@@ -1,0 +1,66 @@
+version: '3.8'
+
+services:
+  api:
+    build: .
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    environment:
+      - PORT=8000
+      - HOST=0.0.0.0
+      - DEBUG=false
+      - LOG_LEVEL=info
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_NAME=infographic_db
+      - DB_USER=postgres
+      - DB_PASSWORD=postgres
+      - TEMPLATES_DIR=/app/templates
+      - VECTOR_DB_PATH=/app/data/vector_db
+    volumes:
+      - .:/app
+      - ./templates:/app/templates
+      - ./scripts:/app/scripts
+      - ../images:/app/images:ro  # Mount your images folder (read-only)
+      - vector_db_data:/app/data
+    restart: unless-stopped
+    depends_on:
+      - postgres
+      - redis
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Optional: Add Redis for caching (recommended for production)
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    restart: unless-stopped
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_data:/data
+
+  # PostgreSQL for template coordinates and metadata
+  postgres:
+    image: postgres:15-alpine
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_DB=infographic_db
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
+
+volumes:
+  redis_data:
+  postgres_data:
+  vector_db_data:
