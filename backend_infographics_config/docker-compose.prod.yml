@@ -1,0 +1,86 @@
+version: '3.8'
+
+services:
+  api:
+    build: .
+    container_name: infographic_api
+    environment:
+      - PORT=8000
+      - HOST=0.0.0.0
+      - DEBUG=false
+      - LOG_LEVEL=info
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_NAME=infographic_db
+      - DB_USER=postgres
+      - DB_PASSWORD=postgres
+      - TEMPLATES_DIR=/app/templates
+      - VECTOR_DB_PATH=/app/data/vector_db
+    volumes:
+      - ./templates:/app/templates
+      - ./images:/app/images:ro
+      - vector_db_data:/app/data
+    restart: unless-stopped
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - infographic_network
+
+  nginx:
+    image: nginx:alpine
+    container_name: infographic_nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf
+      - ./nginx/api.conf:/etc/nginx/conf.d/default.conf
+      - ./certbot/conf:/etc/letsencrypt
+      - ./certbot/www:/var/www/certbot
+    restart: unless-stopped
+    depends_on:
+      - api
+    networks:
+      - infographic_network
+
+  certbot:
+    image: certbot/certbot
+    container_name: infographic_certbot
+    volumes:
+      - ./certbot/conf:/etc/letsencrypt
+      - ./certbot/www:/var/www/certbot
+    command: certonly --webroot -w /var/www/certbot --force-renewal --email your-email@example.com -d api.videotoinfographics.com --agree-tos
+
+  postgres:
+    image: postgres:15-alpine
+    container_name: infographic_postgres
+    environment:
+      - POSTGRES_DB=infographic_db
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
+    networks:
+      - infographic_network
+
+  redis:
+    image: redis:7-alpine
+    container_name: infographic_redis
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_data:/data
+    restart: unless-stopped
+    networks:
+      - infographic_network
+
+volumes:
+  postgres_data:
+  redis_data:
+  vector_db_data:
+
+networks:
+  infographic_network:
+    driver: bridge
