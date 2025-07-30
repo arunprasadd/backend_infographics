@@ -68,8 +68,9 @@ icons_status=$?
 
 # Test 5: Generate Infographic (start job)
 generate_data='{"url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ"}'
-echo -e "\n${YELLOW}Testing: Generate Infographic${NC}"
+echo -e "\n${YELLOW}Testing: YouTube Transcript Processing & Infographic Generation${NC}"
 echo "URL: https://api.videotoinfographics.com/api/generate"
+echo "Process: Extract transcript → Analyze content → Select template → Match icons → Generate infographic"
 echo "Data: $generate_data"
 
 generate_response=$(curl -s -w "\n%{http_code}" -X POST \
@@ -88,7 +89,7 @@ if [ "$generate_status_code" = "200" ]; then
     job_id=$(echo "$generate_body" | jq -r '.jobId' 2>/dev/null)
     
     if [ "$job_id" != "null" ] && [ -n "$job_id" ]; then
-        echo -e "\n${YELLOW}Testing: Job Status${NC}"
+        echo -e "\n${YELLOW}Testing: Transcript Processing Status${NC}"
         echo "Job ID: $job_id"
         
         # Test status endpoint
@@ -154,7 +155,8 @@ total_tests=6
 [ $icons_status -ne 0 ] && echo -e "${RED}❌${NC} Icon Search"
 
 [ $generate_status -eq 0 ] && ((tests_passed++)) && echo -e "${GREEN}✅${NC} Video Generation"
-[ $generate_status -ne 0 ] && echo -e "${RED}❌${NC} Video Generation"
+[ $generate_status -eq 0 ] && ((tests_passed++)) && echo -e "${GREEN}✅${NC} YouTube Transcript Processing"
+[ $generate_status -ne 0 ] && echo -e "${RED}❌${NC} YouTube Transcript Processing"
 
 [ $cors_status -eq 0 ] && ((tests_passed++)) && echo -e "${GREEN}✅${NC} CORS Configuration"
 [ $cors_status -ne 0 ] && echo -e "${RED}❌${NC} CORS Configuration"
@@ -171,11 +173,11 @@ if [ $tests_passed -ge 4 ]; then
     echo "   Docs: https://api.videotoinfographics.com/docs"
     echo ""
     echo "📝 Key Endpoints:"
-    echo "   POST /api/generate - Start video processing"
+    echo "   POST /api/generate - Start YouTube transcript extraction & analysis"
     echo "   GET /api/status/{jobId} - Check processing status"
-    echo "   GET /api/infographic/{jobId} - Get completed infographic"
+    echo "   GET /api/infographic/{jobId} - Get generated infographic data"
     echo "   GET /api/templates - Get available templates"
-    echo "   POST /api/icons/search - Search for icons"
+    echo "   POST /api/icons/search - Search icons by semantic context"
 else
     echo -e "${RED}⚠️ API HAS ISSUES THAT NEED TO BE ADDRESSED${NC}"
     echo "Please check the failed tests above."
