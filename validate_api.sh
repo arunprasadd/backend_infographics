@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 
 echo "🚀 YouTube to Infographic API Validation"
 echo "🌐 Testing API at: https://api.videotoinfographics.com"
