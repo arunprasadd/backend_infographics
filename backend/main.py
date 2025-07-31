@@ -8,6 +8,7 @@ import json
 from typing import Dict, Optional
 from youtube_transcript_api import YouTubeTranscriptApi
 from youtube_transcript_api.formatters import TextFormatter
+from youtube_transcript_api._errors import TranscriptsDisabled, NoTranscriptFound, VideoUnavailable
 import re
 import asyncio
 from datetime import datetime
@@ -390,20 +391,63 @@ async def process_youtube_video(job_id: str, url: str):
         
         # Get transcript
         try:
-            transcript_list = YouTubeTranscriptApi.get_transcript(video_id)
+            # Try to get transcript with multiple language options and manual captions
+            transcript_list = None
+            
+            # First, try to get available transcripts
+            try:
+                available_transcripts = YouTubeTranscriptApi.list_transcripts(video_id)
+                
+                # Try to get English transcript first (auto-generated or manual)
+                try:
+                    transcript = available_transcripts.find_transcript(['en'])
+                    transcript_list = transcript.fetch()
+                except:
+                    # Try any available transcript
+                    for transcript in available_transcripts:
+                        try:
+                            transcript_list = transcript.fetch()
+                            break
+                        except:
+                            continue
+                            
+            except Exception as list_error:
+                logger.warning(f"Could not list transcripts: {str(list_error)}")
+                
+                # Fallback to direct transcript fetch
+                try:
+                    transcript_list = YouTubeTranscriptApi.get_transcript(video_id, languages=['en', 'en-US', 'en-GB'])
+                except:
+                    # Try without language specification
+                    transcript_list = YouTubeTranscriptApi.get_transcript(video_id)
+            
+            if not transcript_list:
+                raise Exception("No transcript data retrieved")
+                
             formatter = TextFormatter()
             transcript_text = formatter.format_transcript(transcript_list)
             
             if not transcript_text.strip():
                 raise Exception("Empty transcript received")
                 
-        except Exception as e:
-            logger.error(f"Transcript error: {str(e)}")
+            logger.info(f"Successfully retrieved transcript with {len(transcript_text)} characters")
+                
+        except (TranscriptsDisabled, NoTranscriptFound, VideoUnavailable) as e:
+            logger.error(f"YouTube transcript API error: {str(e)}")
             processing_jobs[job_id] = {
                 "status": "error",
                 "stage": "Transcript unavailable",
                 "progress": 25,
-                "message": f"Could not retrieve transcript: {str(e)}"
+                "message": f"This video doesn't have accessible transcripts. Please try a different video that has subtitles/captions enabled."
+            }
+            return
+        except Exception as e:
+            logger.error(f"Unexpected transcript error: {str(e)}")
+            processing_jobs[job_id] = {
+                "status": "error",
+                "stage": "Transcript unavailable",
+                "progress": 25,
+                "message": f"Could not retrieve transcript. This might be due to: 1) Video has no subtitles/captions, 2) Video is private/restricted, 3) Geographic restrictions. Please try a different video."
             }
             return
         
