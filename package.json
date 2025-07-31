@@ -1,0 +1,55 @@
+{
+  "name": "youtube-infographic-generator",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "description": "A full-stack application that converts YouTube videos into beautiful infographics using real transcript data and AI-powered content analysis.",
+  "scripts": {
+    "dev": "vite",
+    "dev:full": "concurrently \"npm run dev:backend\" \"npm run dev\"",
+    "dev:backend": "cd backend && python run.py",
+    "build": "tsc && vite build",
+    "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "@types/react": "^18.2.43",
+    "@types/react-dom": "^18.2.17",
+    "lucide-react": "^0.294.0",
+    "clsx": "^2.0.0",
+    "tailwind-merge": "^2.2.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.10.5",
+    "@typescript-eslint/eslint-plugin": "^6.14.0",
+    "@typescript-eslint/parser": "^6.14.0",
+    "@vitejs/plugin-react": "^4.2.1",
+    "autoprefixer": "^10.4.16",
+    "concurrently": "^8.2.2",
+    "eslint": "^8.55.0",
+    "eslint-plugin-react-hooks": "^4.6.0",
+    "eslint-plugin-react-refresh": "^0.4.5",
+    "postcss": "^8.4.32",
+    "tailwindcss": "^3.4.0",
+    "typescript": "^5.2.2",
+    "vite": "^5.0.8"
+  },
+  "keywords": [
+    "youtube",
+    "infographic",
+    "ai",
+    "react",
+    "typescript",
+    "vite",
+    "tailwindcss"
+  ],
+  "author": "YouTube Infographic Generator Team",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/your-username/youtube-infographic-generator"
+  },
+  "homepage": "https://exquisite-capybara-f02683.netlify.app"
+}
